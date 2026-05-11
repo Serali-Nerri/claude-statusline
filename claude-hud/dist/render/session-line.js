@@ -115,6 +115,13 @@ export function renderSessionLine(ctx) {
     else if (gitPart) {
         parts.push(gitPart);
     }
+    const totalTokens = getTotalTokens(ctx.stdin);
+    parts.push(`${getContextColor(percent, colors, contextThresholds)}${formatTokens(totalTokens)}${RESET}`);
+    const promptCacheLine = renderPromptCacheLine(ctx, percent);
+    if (promptCacheLine) {
+        parts.push(promptCacheLine);
+    }
+    parts.push(contextValueDisplay);
     // Session name (custom title from /rename, or auto-generated slug)
     if (display?.showSessionName && ctx.transcript.sessionName) {
         parts.push(label(ctx.transcript.sessionName, colors));
@@ -234,10 +241,6 @@ export function renderSessionLine(ctx) {
                 }
             }
         }
-    }
-    const promptCacheLine = renderPromptCacheLine(ctx);
-    if (promptCacheLine) {
-        parts.push(promptCacheLine);
     }
     // Session token usage (cumulative)
     if (display?.showSessionTokens && ctx.transcript.sessionTokens) {

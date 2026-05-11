@@ -11,7 +11,7 @@
     "showPromptCache": true,
     "showSpeed": true,
     "showTools": false,
-    "showSessionTokens": true,
+    "showSessionTokens": false,
     "showUsage": true,
     "showContextBar": false
   }

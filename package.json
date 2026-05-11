@@ -1,0 +1,15 @@
+{
+  "name": "claude-statusline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Customized Claude Code statusline HUD",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/statusline-render-sample.mjs",
+    "test:stdin": "node -e \"process.stdout.write(JSON.stringify({cwd:'.',transcript_path:'',model:{display_name:'Test'},context_window:{context_window_size:200000,current_usage:{input_tokens:10000,cache_creation_input_tokens:500,cache_read_input_tokens:8000}}}))\" | node claude-hud/dist/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}

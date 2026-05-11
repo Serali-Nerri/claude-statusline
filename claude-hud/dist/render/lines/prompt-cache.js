@@ -25,7 +25,7 @@ export function formatPromptCacheCountdown(remainingMs) {
     }
     return `${minutes}m ${seconds}s`;
 }
-export function renderPromptCacheLine(ctx, now = Date.now()) {
+export function renderPromptCacheLine(ctx, contextPercent = 0) {
     const display = ctx.config?.display;
     if (!display?.showPromptCache) {
         return null;
