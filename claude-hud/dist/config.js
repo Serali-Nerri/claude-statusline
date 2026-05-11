@@ -270,197 +270,108 @@ function validateFreshnessMs(value) {
     }
     return Math.max(0, Math.floor(value));
 }
+function mergeBool(obj, key, fallback) {
+    return typeof obj?.[key] === 'boolean' ? obj[key] : fallback;
+}
+function mergeValidated(obj, key, validator, fallback) {
+    return validator(obj?.[key]) ? obj[key] : fallback;
+}
+function mergeColor(obj, key, fallback) {
+    return validateColorValue(obj?.[key]) ? obj[key] : fallback;
+}
 export function mergeConfig(userConfig) {
     const migrated = migrateConfig(userConfig);
-    const language = validateLanguage(migrated.language)
-        ? migrated.language
-        : DEFAULT_CONFIG.language;
-    const lineLayout = validateLineLayout(migrated.lineLayout)
-        ? migrated.lineLayout
-        : DEFAULT_CONFIG.lineLayout;
-    const showSeparators = typeof migrated.showSeparators === 'boolean'
-        ? migrated.showSeparators
-        : DEFAULT_CONFIG.showSeparators;
-    const pathLevels = validatePathLevels(migrated.pathLevels)
-        ? migrated.pathLevels
-        : DEFAULT_CONFIG.pathLevels;
+    const language = mergeValidated(migrated, 'language', validateLanguage, DEFAULT_CONFIG.language);
+    const lineLayout = mergeValidated(migrated, 'lineLayout', validateLineLayout, DEFAULT_CONFIG.lineLayout);
+    const showSeparators = mergeBool(migrated, 'showSeparators', DEFAULT_CONFIG.showSeparators);
+    const pathLevels = mergeValidated(migrated, 'pathLevels', validatePathLevels, DEFAULT_CONFIG.pathLevels);
     const rawMaxWidth = migrated.maxWidth;
     const maxWidth = (typeof rawMaxWidth === 'number' && Number.isFinite(rawMaxWidth) && rawMaxWidth > 0)
         ? Math.floor(rawMaxWidth)
         : null;
     const elementOrder = validateElementOrder(migrated.elementOrder);
-    const forceMaxWidth = typeof migrated.forceMaxWidth === 'boolean'
-        ? migrated.forceMaxWidth
-        : DEFAULT_CONFIG.forceMaxWidth;
+    const forceMaxWidth = mergeBool(migrated, 'forceMaxWidth', DEFAULT_CONFIG.forceMaxWidth);
+    const gs = migrated.gitStatus;
     const gitStatus = {
-        enabled: typeof migrated.gitStatus?.enabled === 'boolean'
-            ? migrated.gitStatus.enabled
-            : DEFAULT_CONFIG.gitStatus.enabled,
-        showDirty: typeof migrated.gitStatus?.showDirty === 'boolean'
-            ? migrated.gitStatus.showDirty
-            : DEFAULT_CONFIG.gitStatus.showDirty,
-        showAheadBehind: typeof migrated.gitStatus?.showAheadBehind === 'boolean'
-            ? migrated.gitStatus.showAheadBehind
-            : DEFAULT_CONFIG.gitStatus.showAheadBehind,
-        showFileStats: typeof migrated.gitStatus?.showFileStats === 'boolean'
-            ? migrated.gitStatus.showFileStats
-            : DEFAULT_CONFIG.gitStatus.showFileStats,
-        branchOverflow: validateGitBranchOverflow(migrated.gitStatus?.branchOverflow)
-            ? migrated.gitStatus.branchOverflow
-            : DEFAULT_CONFIG.gitStatus.branchOverflow,
-        pushWarningThreshold: validateCountThreshold(migrated.gitStatus?.pushWarningThreshold),
-        pushCriticalThreshold: validateCountThreshold(migrated.gitStatus?.pushCriticalThreshold),
+        enabled: mergeBool(gs, 'enabled', DEFAULT_CONFIG.gitStatus.enabled),
+        showDirty: mergeBool(gs, 'showDirty', DEFAULT_CONFIG.gitStatus.showDirty),
+        showAheadBehind: mergeBool(gs, 'showAheadBehind', DEFAULT_CONFIG.gitStatus.showAheadBehind),
+        showFileStats: mergeBool(gs, 'showFileStats', DEFAULT_CONFIG.gitStatus.showFileStats),
+        branchOverflow: mergeValidated(gs, 'branchOverflow', validateGitBranchOverflow, DEFAULT_CONFIG.gitStatus.branchOverflow),
+        pushWarningThreshold: validateCountThreshold(gs?.pushWarningThreshold),
+        pushCriticalThreshold: validateCountThreshold(gs?.pushCriticalThreshold),
     };
+    const d = migrated.display;
+    const dd = DEFAULT_CONFIG.display;
     const display = {
-        showModel: typeof migrated.display?.showModel === 'boolean'
-            ? migrated.display.showModel
-            : DEFAULT_CONFIG.display.showModel,
-        showProject: typeof migrated.display?.showProject === 'boolean'
-            ? migrated.display.showProject
-            : DEFAULT_CONFIG.display.showProject,
-        showAddedDirs: typeof migrated.display?.showAddedDirs === 'boolean'
-            ? migrated.display.showAddedDirs
-            : DEFAULT_CONFIG.display.showAddedDirs,
-        addedDirsLayout: (migrated.display?.addedDirsLayout === 'inline' || migrated.display?.addedDirsLayout === 'line')
-            ? migrated.display.addedDirsLayout
-            : DEFAULT_CONFIG.display.addedDirsLayout,
-        showContextBar: typeof migrated.display?.showContextBar === 'boolean'
-            ? migrated.display.showContextBar
-            : DEFAULT_CONFIG.display.showContextBar,
-        contextValue: validateContextValue(migrated.display?.contextValue)
-            ? migrated.display.contextValue
-            : DEFAULT_CONFIG.display.contextValue,
-        showConfigCounts: typeof migrated.display?.showConfigCounts === 'boolean'
-            ? migrated.display.showConfigCounts
-            : DEFAULT_CONFIG.display.showConfigCounts,
-        showCost: typeof migrated.display?.showCost === 'boolean'
-            ? migrated.display.showCost
-            : DEFAULT_CONFIG.display.showCost,
-        showDuration: typeof migrated.display?.showDuration === 'boolean'
-            ? migrated.display.showDuration
-            : DEFAULT_CONFIG.display.showDuration,
-        showSpeed: typeof migrated.display?.showSpeed === 'boolean'
-            ? migrated.display.showSpeed
-            : DEFAULT_CONFIG.display.showSpeed,
-        showTokenBreakdown: typeof migrated.display?.showTokenBreakdown === 'boolean'
-            ? migrated.display.showTokenBreakdown
-            : DEFAULT_CONFIG.display.showTokenBreakdown,
-        showUsage: typeof migrated.display?.showUsage === 'boolean'
-            ? migrated.display.showUsage
-            : DEFAULT_CONFIG.display.showUsage,
-        usageBarEnabled: typeof migrated.display?.usageBarEnabled === 'boolean'
-            ? migrated.display.usageBarEnabled
-            : DEFAULT_CONFIG.display.usageBarEnabled,
-        showResetLabel: typeof migrated.display?.showResetLabel === 'boolean'
-            ? migrated.display.showResetLabel
-            : DEFAULT_CONFIG.display.showResetLabel,
-        usageCompact: typeof migrated.display?.usageCompact === 'boolean'
-            ? migrated.display.usageCompact
-            : DEFAULT_CONFIG.display.usageCompact,
-        showTools: typeof migrated.display?.showTools === 'boolean'
-            ? migrated.display.showTools
-            : DEFAULT_CONFIG.display.showTools,
-        showAgents: typeof migrated.display?.showAgents === 'boolean'
-            ? migrated.display.showAgents
-            : DEFAULT_CONFIG.display.showAgents,
-        showTodos: typeof migrated.display?.showTodos === 'boolean'
-            ? migrated.display.showTodos
-            : DEFAULT_CONFIG.display.showTodos,
-        showSessionName: typeof migrated.display?.showSessionName === 'boolean'
-            ? migrated.display.showSessionName
-            : DEFAULT_CONFIG.display.showSessionName,
-        showClaudeCodeVersion: typeof migrated.display?.showClaudeCodeVersion === 'boolean'
-            ? migrated.display.showClaudeCodeVersion
-            : DEFAULT_CONFIG.display.showClaudeCodeVersion,
-        showEffortLevel: typeof migrated.display?.showEffortLevel === 'boolean'
-            ? migrated.display.showEffortLevel
-            : DEFAULT_CONFIG.display.showEffortLevel,
-        showMemoryUsage: typeof migrated.display?.showMemoryUsage === 'boolean'
-            ? migrated.display.showMemoryUsage
-            : DEFAULT_CONFIG.display.showMemoryUsage,
-        showPromptCache: typeof migrated.display?.showPromptCache === 'boolean'
-            ? migrated.display.showPromptCache
-            : DEFAULT_CONFIG.display.showPromptCache,
-        promptCacheTtlSeconds: validateDurationSeconds(migrated.display?.promptCacheTtlSeconds, DEFAULT_CONFIG.display.promptCacheTtlSeconds),
-        showSessionTokens: typeof migrated.display?.showSessionTokens === 'boolean'
-            ? migrated.display.showSessionTokens
-            : DEFAULT_CONFIG.display.showSessionTokens,
-        showOutputStyle: typeof migrated.display?.showOutputStyle === 'boolean'
-            ? migrated.display.showOutputStyle
-            : DEFAULT_CONFIG.display.showOutputStyle,
-        mergeGroups: validateMergeGroups(migrated.display?.mergeGroups),
-        autocompactBuffer: validateAutocompactBuffer(migrated.display?.autocompactBuffer)
-            ? migrated.display.autocompactBuffer
-            : DEFAULT_CONFIG.display.autocompactBuffer,
-        contextWarningThreshold: validateContextThreshold(migrated.display?.contextWarningThreshold, DEFAULT_CONFIG.display.contextWarningThreshold),
-        contextCriticalThreshold: validateContextThreshold(migrated.display?.contextCriticalThreshold, DEFAULT_CONFIG.display.contextCriticalThreshold),
-        usageThreshold: validateThreshold(migrated.display?.usageThreshold, 100),
-        sevenDayThreshold: validateThreshold(migrated.display?.sevenDayThreshold, 100),
-        environmentThreshold: validateThreshold(migrated.display?.environmentThreshold, 100),
-        externalUsagePath: validateOptionalPath(migrated.display?.externalUsagePath),
-        externalUsageFreshnessMs: validateFreshnessMs(migrated.display?.externalUsageFreshnessMs),
-        modelFormat: validateModelFormat(migrated.display?.modelFormat)
-            ? migrated.display.modelFormat
-            : DEFAULT_CONFIG.display.modelFormat,
-        modelOverride: typeof migrated.display?.modelOverride === 'string'
-            ? migrated.display.modelOverride.slice(0, 80)
-            : DEFAULT_CONFIG.display.modelOverride,
-        customLine: typeof migrated.display?.customLine === 'string'
-            ? migrated.display.customLine.slice(0, 80)
-            : DEFAULT_CONFIG.display.customLine,
-        timeFormat: validateTimeFormat(migrated.display?.timeFormat)
-            ? migrated.display.timeFormat
-            : DEFAULT_CONFIG.display.timeFormat,
+        showModel: mergeBool(d, 'showModel', dd.showModel),
+        showProject: mergeBool(d, 'showProject', dd.showProject),
+        showAddedDirs: mergeBool(d, 'showAddedDirs', dd.showAddedDirs),
+        addedDirsLayout: (d?.addedDirsLayout === 'inline' || d?.addedDirsLayout === 'line')
+            ? d.addedDirsLayout
+            : dd.addedDirsLayout,
+        showContextBar: mergeBool(d, 'showContextBar', dd.showContextBar),
+        contextValue: mergeValidated(d, 'contextValue', validateContextValue, dd.contextValue),
+        showConfigCounts: mergeBool(d, 'showConfigCounts', dd.showConfigCounts),
+        showCost: mergeBool(d, 'showCost', dd.showCost),
+        showDuration: mergeBool(d, 'showDuration', dd.showDuration),
+        showSpeed: mergeBool(d, 'showSpeed', dd.showSpeed),
+        showTokenBreakdown: mergeBool(d, 'showTokenBreakdown', dd.showTokenBreakdown),
+        showUsage: mergeBool(d, 'showUsage', dd.showUsage),
+        usageBarEnabled: mergeBool(d, 'usageBarEnabled', dd.usageBarEnabled),
+        showResetLabel: mergeBool(d, 'showResetLabel', dd.showResetLabel),
+        usageCompact: mergeBool(d, 'usageCompact', dd.usageCompact),
+        showTools: mergeBool(d, 'showTools', dd.showTools),
+        showAgents: mergeBool(d, 'showAgents', dd.showAgents),
+        showTodos: mergeBool(d, 'showTodos', dd.showTodos),
+        showSessionName: mergeBool(d, 'showSessionName', dd.showSessionName),
+        showClaudeCodeVersion: mergeBool(d, 'showClaudeCodeVersion', dd.showClaudeCodeVersion),
+        showEffortLevel: mergeBool(d, 'showEffortLevel', dd.showEffortLevel),
+        showMemoryUsage: mergeBool(d, 'showMemoryUsage', dd.showMemoryUsage),
+        showPromptCache: mergeBool(d, 'showPromptCache', dd.showPromptCache),
+        promptCacheTtlSeconds: validateDurationSeconds(d?.promptCacheTtlSeconds, dd.promptCacheTtlSeconds),
+        showSessionTokens: mergeBool(d, 'showSessionTokens', dd.showSessionTokens),
+        showOutputStyle: mergeBool(d, 'showOutputStyle', dd.showOutputStyle),
+        mergeGroups: validateMergeGroups(d?.mergeGroups),
+        autocompactBuffer: mergeValidated(d, 'autocompactBuffer', validateAutocompactBuffer, dd.autocompactBuffer),
+        contextWarningThreshold: validateContextThreshold(d?.contextWarningThreshold, dd.contextWarningThreshold),
+        contextCriticalThreshold: validateContextThreshold(d?.contextCriticalThreshold, dd.contextCriticalThreshold),
+        usageThreshold: validateThreshold(d?.usageThreshold, 100),
+        sevenDayThreshold: validateThreshold(d?.sevenDayThreshold, 100),
+        environmentThreshold: validateThreshold(d?.environmentThreshold, 100),
+        externalUsagePath: validateOptionalPath(d?.externalUsagePath),
+        externalUsageFreshnessMs: validateFreshnessMs(d?.externalUsageFreshnessMs),
+        modelFormat: mergeValidated(d, 'modelFormat', validateModelFormat, dd.modelFormat),
+        modelOverride: typeof d?.modelOverride === 'string'
+            ? d.modelOverride.slice(0, 80)
+            : dd.modelOverride,
+        customLine: typeof d?.customLine === 'string'
+            ? d.customLine.slice(0, 80)
+            : dd.customLine,
+        timeFormat: mergeValidated(d, 'timeFormat', validateTimeFormat, dd.timeFormat),
     };
+    const c = migrated.colors;
+    const dc = DEFAULT_CONFIG.colors;
     const colors = {
-        context: validateColorValue(migrated.colors?.context)
-            ? migrated.colors.context
-            : DEFAULT_CONFIG.colors.context,
-        usage: validateColorValue(migrated.colors?.usage)
-            ? migrated.colors.usage
-            : DEFAULT_CONFIG.colors.usage,
-        warning: validateColorValue(migrated.colors?.warning)
-            ? migrated.colors.warning
-            : DEFAULT_CONFIG.colors.warning,
-        usageWarning: validateColorValue(migrated.colors?.usageWarning)
-            ? migrated.colors.usageWarning
-            : DEFAULT_CONFIG.colors.usageWarning,
-        critical: validateColorValue(migrated.colors?.critical)
-            ? migrated.colors.critical
-            : DEFAULT_CONFIG.colors.critical,
-        model: validateColorValue(migrated.colors?.model)
-            ? migrated.colors.model
-            : DEFAULT_CONFIG.colors.model,
-        project: validateColorValue(migrated.colors?.project)
-            ? migrated.colors.project
-            : DEFAULT_CONFIG.colors.project,
-        git: validateColorValue(migrated.colors?.git)
-            ? migrated.colors.git
-            : DEFAULT_CONFIG.colors.git,
-        gitBranch: validateColorValue(migrated.colors?.gitBranch)
-            ? migrated.colors.gitBranch
-            : DEFAULT_CONFIG.colors.gitBranch,
-        label: validateColorValue(migrated.colors?.label)
-            ? migrated.colors.label
-            : DEFAULT_CONFIG.colors.label,
-        custom: validateColorValue(migrated.colors?.custom)
-            ? migrated.colors.custom
-            : DEFAULT_CONFIG.colors.custom,
-        barFilled: validateBarChar(migrated.colors?.barFilled)
-            ? migrated.colors.barFilled
-            : DEFAULT_CONFIG.colors.barFilled,
-        barEmpty: validateBarChar(migrated.colors?.barEmpty)
-            ? migrated.colors.barEmpty
-            : DEFAULT_CONFIG.colors.barEmpty,
+        context: mergeColor(c, 'context', dc.context),
+        usage: mergeColor(c, 'usage', dc.usage),
+        warning: mergeColor(c, 'warning', dc.warning),
+        usageWarning: mergeColor(c, 'usageWarning', dc.usageWarning),
+        critical: mergeColor(c, 'critical', dc.critical),
+        model: mergeColor(c, 'model', dc.model),
+        project: mergeColor(c, 'project', dc.project),
+        git: mergeColor(c, 'git', dc.git),
+        gitBranch: mergeColor(c, 'gitBranch', dc.gitBranch),
+        label: mergeColor(c, 'label', dc.label),
+        custom: mergeColor(c, 'custom', dc.custom),
+        barFilled: validateBarChar(c?.barFilled) ? c.barFilled : dc.barFilled,
+        barEmpty: validateBarChar(c?.barEmpty) ? c.barEmpty : dc.barEmpty,
     };
     return { language, lineLayout, showSeparators, pathLevels, maxWidth, forceMaxWidth, elementOrder, gitStatus, display, colors };
 }
 export async function loadConfig() {
     const configPath = getConfigPath();
     try {
-        if (!fs.existsSync(configPath)) {
-            return mergeConfig({});
-        }
         const content = fs.readFileSync(configPath, 'utf-8');
         const userConfig = JSON.parse(content);
         return mergeConfig(userConfig);

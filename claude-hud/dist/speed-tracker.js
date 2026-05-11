@@ -44,26 +44,23 @@ function writeCache(homeDir, transcriptPath, cache) {
     try {
         const cachePath = getCachePath(homeDir, transcriptPath);
         const cacheDir = path.dirname(cachePath);
-        if (!fs.existsSync(cacheDir)) {
-            fs.mkdirSync(cacheDir, { recursive: true });
-        }
+        fs.mkdirSync(cacheDir, { recursive: true });
         fs.writeFileSync(cachePath, JSON.stringify(cache), 'utf8');
     }
     catch {
         // Ignore cache write failures
     }
 }
-// Remove the pre-0.x global cache file once, if present. It has no owner
-// session so leaving it around only wastes disk.
+let legacyCacheRemoved = false;
 function removeLegacyCache(homeDir) {
+    if (legacyCacheRemoved) return;
+    legacyCacheRemoved = true;
     try {
         const legacyPath = path.join(getHudPluginDir(homeDir), LEGACY_CACHE_FILENAME);
-        if (fs.existsSync(legacyPath)) {
-            fs.unlinkSync(legacyPath);
-        }
+        fs.unlinkSync(legacyPath);
     }
     catch {
-        // Ignore cleanup failures
+        // File doesn't exist or cleanup failed — either way, don't retry.
     }
 }
 export function getOutputSpeed(stdin, overrides = {}) {

@@ -52,8 +52,7 @@ export function renderProjectLine(ctx) {
     if (display?.showModel !== false) {
         const model = formatModelName(getModelName(ctx.stdin), ctx.config?.display?.modelFormat, ctx.config?.display?.modelOverride);
         const providerLabel = getProviderLabel(ctx.stdin);
-        const modelQualifier = providerLabel ?? undefined;
-        let modelDisplay = modelQualifier ? `${model} | ${modelQualifier}` : model;
+        let modelDisplay = providerLabel ? `${model} | ${providerLabel}` : model;
         if (ctx.effortLevel && ctx.effortSymbol) {
             modelDisplay += ` ${ctx.effortSymbol} ${ctx.effortLevel}`;
         }
@@ -188,18 +187,17 @@ export function renderGitFilesLine(ctx, terminalWidth = null) {
     if (terminalWidth !== null && terminalWidth < 60)
         return null;
     const cwd = ctx.stdin.cwd;
-    const sorted = [...trackedFiles].sort((a, b) => {
+    const mtimeCache = new Map();
+    for (const file of trackedFiles) {
         try {
-            const aPath = cwd ? resolvePathWithinCwd(cwd, a.fullPath) : null;
-            const bPath = cwd ? resolvePathWithinCwd(cwd, b.fullPath) : null;
-            const aMtime = aPath ? fs.statSync(aPath).mtimeMs : 0;
-            const bMtime = bPath ? fs.statSync(bPath).mtimeMs : 0;
-            return bMtime - aMtime;
+            const resolvedPath = cwd ? resolvePathWithinCwd(cwd, file.fullPath) : null;
+            mtimeCache.set(file, resolvedPath ? fs.statSync(resolvedPath).mtimeMs : 0);
         }
         catch {
-            return 0;
+            mtimeCache.set(file, 0);
         }
-    });
+    }
+    const sorted = [...trackedFiles].sort((a, b) => (mtimeCache.get(b) ?? 0) - (mtimeCache.get(a) ?? 0));
     const shown = sorted.slice(0, 6);
     const overflow = sorted.length - shown.length;
     const statParts = [];

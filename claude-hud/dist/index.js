@@ -36,7 +36,6 @@ export async function main(overrides = {}) {
     try {
         const stdin = await deps.readStdin();
         if (!stdin) {
-            // Running without stdin - this happens during setup verification
             const config = await deps.loadConfig();
             setLanguage(config.language);
             const isMacOS = process.platform === "darwin";
@@ -47,17 +46,20 @@ export async function main(overrides = {}) {
             return;
         }
         const transcriptPath = stdin.transcript_path ?? "";
-        const transcript = await deps.parseTranscript(transcriptPath);
+        const [transcript, config] = await Promise.all([
+            deps.parseTranscript(transcriptPath),
+            deps.loadConfig(),
+        ]);
+        setLanguage(config.language);
         deps.applyContextWindowFallback(stdin, {}, transcript.sessionName, {
             lastCompactBoundaryAt: transcript.lastCompactBoundaryAt,
             lastCompactPostTokens: transcript.lastCompactPostTokens,
         });
-        const { claudeMdCount, rulesCount, mcpCount, hooksCount, outputStyle } = await deps.countConfigs(stdin.cwd);
-        const config = await deps.loadConfig();
-        setLanguage(config.language);
-        const gitStatus = config.gitStatus.enabled
-            ? await deps.getGitStatus(stdin.cwd)
-            : null;
+        const [{ claudeMdCount, rulesCount, mcpCount, hooksCount, outputStyle }, gitStatus, claudeCodeVersion] = await Promise.all([
+            deps.countConfigs(stdin.cwd),
+            config.gitStatus.enabled ? deps.getGitStatus(stdin.cwd) : null,
+            config.display.showClaudeCodeVersion ? deps.getClaudeCodeVersion() : Promise.resolve(undefined),
+        ]);
         let usageData = null;
         if (config.display.showUsage !== false) {
             usageData = deps.getUsageFromStdin(stdin);
@@ -66,16 +68,15 @@ export async function main(overrides = {}) {
             }
         }
         const extraCmd = deps.parseExtraCmdArg();
-        const extraLabel = extraCmd ? await deps.runExtraCmd(extraCmd) : null;
+        const [extraLabel, memoryUsage] = await Promise.all([
+            extraCmd ? deps.runExtraCmd(extraCmd) : null,
+            config.display.showMemoryUsage && config.lineLayout === "expanded"
+                ? deps.getMemoryUsage()
+                : null,
+        ]);
         const sessionDuration = formatSessionDuration(transcript.sessionStart, deps.now);
-        const claudeCodeVersion = config.display.showClaudeCodeVersion
-            ? await deps.getClaudeCodeVersion()
-            : undefined;
         const effortInfo = config.display.showEffortLevel
             ? resolveEffortLevel(stdin.effort)
-            : null;
-        const memoryUsage = config.display.showMemoryUsage && config.lineLayout === "expanded"
-            ? await deps.getMemoryUsage()
             : null;
         const ctx = {
             stdin,

@@ -134,7 +134,7 @@ export async function parseTranscript(transcriptPath) {
         agents: [],
         todos: [],
     };
-    if (!transcriptPath || !fs.existsSync(transcriptPath)) {
+    if (!transcriptPath) {
         return result;
     }
     const canonicalTranscriptPath = canonicalizeTranscriptPath(transcriptPath);
@@ -280,10 +280,10 @@ function processEntry(entry, toolMap, agentMap, taskIdToIndex, latestTodos, resu
                     }
                     taskIdsByOldIndex.sort((a, b) => a[0] - b[0]);
                     for (const [idx, taskId] of taskIdsByOldIndex) {
-                        const content = latestTodos[idx].content;
-                        const ids = contentToTaskIds.get(content) ?? [];
+                        const todoContent = latestTodos[idx].content;
+                        const ids = contentToTaskIds.get(todoContent) ?? [];
                         ids.push(taskId);
-                        contentToTaskIds.set(content, ids);
+                        contentToTaskIds.set(todoContent, ids);
                     }
                     latestTodos.length = 0;
                     taskIdToIndex.clear();

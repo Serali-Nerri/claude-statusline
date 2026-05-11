@@ -9,6 +9,14 @@ import { createHash } from 'crypto';
 import { createDebug } from './debug.js';
 import { getClaudeConfigDir, getHudPluginDir } from './claude-config-dir.js';
 const debug = createDebug('usage');
+
+export const API_ERROR = {
+    RATE_LIMITED: 'rate-limited',
+    NETWORK: 'network',
+    TIMEOUT: 'timeout',
+    PARSE: 'parse',
+};
+
 const LEGACY_KEYCHAIN_SERVICE_NAME = 'Claude Code-credentials';
 // File-based cache (HUD runs as new process each render, so in-memory cache won't persist)
 const CACHE_TTL_MS = 5 * 60_000; // 5 minutes — matches Anthropic usage API rate limit window
@@ -61,7 +69,7 @@ function getRateLimitedTtlMs(count) {
     return Math.min(CACHE_RATE_LIMITED_BASE_MS * Math.pow(2, Math.max(0, count - 1)), CACHE_RATE_LIMITED_MAX_MS);
 }
 function getRateLimitedRetryUntil(cache) {
-    if (cache.data.apiError !== 'rate-limited') {
+    if (cache.data.apiError !== API_ERROR.RATE_LIMITED) {
         return null;
     }
     if (cache.retryAfterUntil && cache.retryAfterUntil > cache.timestamp) {
@@ -75,7 +83,7 @@ function getRateLimitedRetryUntil(cache) {
 function withRateLimitedSyncing(data) {
     return {
         ...data,
-        apiError: 'rate-limited',
+        apiError: API_ERROR.RATE_LIMITED,
     };
 }
 function readCacheState(homeDir, now, ttls) {
@@ -86,7 +94,7 @@ function readCacheState(homeDir, now, ttls) {
         const content = fs.readFileSync(cachePath, 'utf8');
         const cache = JSON.parse(content);
         // Only serve lastGoodData during rate-limit backoff. Other failures should remain visible.
-        const displayData = (cache.data.apiError === 'rate-limited' && cache.lastGoodData)
+        const displayData = (cache.data.apiError === API_ERROR.RATE_LIMITED && cache.lastGoodData)
             ? withRateLimitedSyncing(cache.lastGoodData)
             : cache.data;
         const rateLimitedRetryUntil = getRateLimitedRetryUntil(cache);
@@ -329,7 +337,7 @@ export async function getUsage(overrides = {}) {
         // Fetch usage from API
         const apiResult = await deps.fetchApi(accessToken);
         if (!apiResult.data) {
-            const isRateLimited = apiResult.error === 'rate-limited';
+            const isRateLimited = apiResult.error === API_ERROR.RATE_LIMITED;
             const prevCount = readRateLimitedCount(homeDir);
             const rateLimitedCount = isRateLimited ? prevCount + 1 : 0;
             const retryAfterUntil = isRateLimited && apiResult.retryAfterSec
@@ -876,7 +884,7 @@ function fetchUsageApi(accessToken) {
                     debug('API returned non-200 status:', res.statusCode);
                     // Use a distinct error key for 429 so cache/render can handle it specially
                     const error = res.statusCode === 429
-                        ? 'rate-limited'
+                        ? API_ERROR.RATE_LIMITED
                         : res.statusCode ? `http-${res.statusCode}` : 'http-error';
                     const retryAfterSec = res.statusCode === 429
                         ? parseRetryAfterSeconds(res.headers['retry-after'])
@@ -893,18 +901,18 @@ function fetchUsageApi(accessToken) {
                 }
                 catch (error) {
                     debug('Failed to parse API response:', error);
-                    resolve({ data: null, error: 'parse' });
+                    resolve({ data: null, error: API_ERROR.PARSE });
                 }
             });
         });
         req.on('error', (error) => {
             debug('API request error:', error);
-            resolve({ data: null, error: 'network' });
+            resolve({ data: null, error: API_ERROR.NETWORK });
         });
         req.on('timeout', () => {
             debug('API request timeout');
             req.destroy();
-            resolve({ data: null, error: 'timeout' });
+            resolve({ data: null, error: API_ERROR.TIMEOUT });
         });
         req.end();
     });

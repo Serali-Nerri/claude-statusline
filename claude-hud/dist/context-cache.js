@@ -85,9 +85,7 @@ function writeCache(homeDir, transcriptPath, contextWindow, now, sessionName) {
             return;
         }
         const cacheDir = path.dirname(cachePath);
-        if (!fs.existsSync(cacheDir)) {
-            fs.mkdirSync(cacheDir, { recursive: true });
-        }
+        fs.mkdirSync(cacheDir, { recursive: true });
         const payload = {
             used_percentage: contextWindow.used_percentage ?? 0,
             remaining_percentage: contextWindow.remaining_percentage ?? null,
