@@ -1,0 +1,18 @@
+{
+  "lineLayout": "compact",
+  "gitStatus": {
+    "enabled": true,
+    "showDirty": true,
+    "showAheadBehind": true,
+    "showFileStats": true
+  },
+  "display": {
+    "showEffortLevel": false,
+    "showPromptCache": true,
+    "showSpeed": true,
+    "showTools": false,
+    "showSessionTokens": true,
+    "showUsage": true,
+    "showContextBar": false
+  }
+}
